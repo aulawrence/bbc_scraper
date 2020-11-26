@@ -1,8 +1,10 @@
+import datetime
 import lxml
 import scrapy
 from lxml.html.clean import Cleaner
 from scrapy.crawler import CrawlerProcess
 from config import SITEMAP_URL_NEWS
+from database import create_client, insert_news
 
 
 class BBCSitemapSpider(scrapy.spiders.XMLFeedSpider):
@@ -68,7 +70,9 @@ class BBCSitemapNewsSpider(scrapy.spiders.XMLFeedSpider):
                     "data": {
                         "url": loc,
                         "title": title,
-                        "publication_date": publication_date,
+                        "publication_date": datetime.datetime.strptime(
+                            publication_date, "%Y-%m-%dT%H:%M:%SZ"
+                        ),
                     }
                 },
             )
@@ -86,6 +90,7 @@ class BBCNewsSpider(scrapy.Spider):
     def __init__(self):
         super(BBCNewsSpider, self).__init__()
         self.html_cleaner = Cleaner(style=True)
+        self.db_client = create_client()
 
     def start_requests(self):
         for url, data in self.start_urls:
@@ -96,6 +101,7 @@ class BBCNewsSpider(scrapy.Spider):
         try:
             article = response.xpath("//article")[0]
         except IndexError:
+            self.logger.warning("Article not found. Url: {}".format(data["url"]))
             return
         article_ls = []
         keyword_ls = []
@@ -106,13 +112,20 @@ class BBCNewsSpider(scrapy.Spider):
             tree = lxml.html.fromstring(clean_html)
             article_ls.append(tree.text_content())
         if not article_ls:
+            self.logger.warning("Article empty. Url: {}".format(data["url"]))
             return
-        keyword_ls = article.xpath(
-            "section[@data-component='tag-list']//li//text()"
-        ).extract()
+        for keyword_html in article.xpath(
+            "section[@data-component='tag-list']//li"
+        ).extract():
+            clean_html = self.html_cleaner.clean_html(keyword_html)
+            tree = lxml.html.fromstring(clean_html)
+            keyword_ls.append(tree.text_content())
         data["article"] = " ".join(article_ls)
         data["keywords"] = keyword_ls
-        return data
+        insert_news(self.db_client, data)
+
+    def closed(self, reason):
+        self.db_client.close()
 
 
 if __name__ == "__main__":
