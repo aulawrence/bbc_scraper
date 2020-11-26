@@ -1,10 +1,17 @@
 import datetime
+import logging
 import lxml
 import scrapy
+from scrapy.utils.log import configure_logging
 from lxml.html.clean import Cleaner
 from scrapy.crawler import CrawlerProcess
-from config import SITEMAP_URL_NEWS
-from database import create_client, insert_news
+from config import SITEMAP_URL_NEWS, SCRAPPER_LOG_FILE
+from database import create_client, destroy_client, insert_news
+
+configure_logging(install_root_handler=False)
+logging.basicConfig(
+    filename=SCRAPPER_LOG_FILE, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 
 class BBCSitemapSpider(scrapy.spiders.XMLFeedSpider):
@@ -125,7 +132,7 @@ class BBCNewsSpider(scrapy.Spider):
         insert_news(self.db_client, data)
 
     def closed(self, reason):
-        self.db_client.close()
+        destroy_client(self.db_client)
 
 
 if __name__ == "__main__":
