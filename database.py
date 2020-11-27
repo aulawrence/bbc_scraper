@@ -1,6 +1,12 @@
-import pymongo
 import argparse
-from config import DATABASE_URL, DATABASE_PORT, DATABASE_NAME
+import pymongo
+from config import (
+    DATABASE_URL,
+    DATABASE_PORT,
+    DATABASE_NAME,
+    DATABASE_USERNAME,
+    DATABASE_PASSWORD_FILE,
+)
 
 
 def init_db(client):
@@ -29,7 +35,7 @@ def query_news(client, text_query, keyword_list, limit):
             not isinstance(keyword, str) for keyword in keyword_list
         ):
             raise ValueError
-        query["keywords"] = {"$in": keyword_list}
+        query["keywords"] = {"$all": keyword_list}
     if limit is not None:
         if not isinstance(limit, int) or limit < 0:
             raise ValueError
@@ -54,7 +60,15 @@ def delete_content(client):
 
 
 def create_client():
-    return pymongo.MongoClient(DATABASE_URL, DATABASE_PORT)
+    with open(DATABASE_PASSWORD_FILE, "r") as f:
+        password = f.read()
+    return pymongo.MongoClient(
+        DATABASE_URL,
+        DATABASE_PORT,
+        username=DATABASE_USERNAME,
+        password=password,
+        tls=True,
+    )
 
 
 def destroy_client(client):

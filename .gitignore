@@ -1,3 +1,6 @@
+/secret/
+*.txt
+
 /.vscode/
 
 __pycache__/

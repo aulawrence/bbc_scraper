@@ -5,12 +5,12 @@ import scrapy
 from scrapy.utils.log import configure_logging
 from lxml.html.clean import Cleaner
 from scrapy.crawler import CrawlerProcess
-from config import SITEMAP_URL_NEWS, SCRAPPER_LOG_FILE
+from config import SITEMAP_URL_NEWS, SCRAPER_LOG_FILE
 from database import create_client, destroy_client, insert_news
 
 configure_logging(install_root_handler=False)
 logging.basicConfig(
-    filename=SCRAPPER_LOG_FILE, format="%(asctime)s - %(levelname)s - %(message)s"
+    filename=SCRAPER_LOG_FILE, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
 
@@ -110,8 +110,8 @@ class BBCNewsSpider(scrapy.Spider):
         except IndexError:
             self.logger.warning("Article not found. Url: {}".format(data["url"]))
             return
+
         article_ls = []
-        keyword_ls = []
         for component_html in article.xpath(
             "div[not(@data-component='media-block' or @data-component='image-block' or @data-component='tag-list')]"
         ).extract():
@@ -121,12 +121,15 @@ class BBCNewsSpider(scrapy.Spider):
         if not article_ls:
             self.logger.warning("Article empty. Url: {}".format(data["url"]))
             return
+
+        keyword_ls = []
         for keyword_html in article.xpath(
             "section[@data-component='tag-list']//li"
         ).extract():
             clean_html = self.html_cleaner.clean_html(keyword_html)
             tree = lxml.html.fromstring(clean_html)
             keyword_ls.append(tree.text_content())
+
         data["article"] = " ".join(article_ls)
         data["keywords"] = keyword_ls
         insert_news(self.db_client, data)

@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 
 @app.route("/")
-def news():
+def index():
     return ""
 
 
