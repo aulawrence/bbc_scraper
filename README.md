@@ -5,6 +5,9 @@ From the sitemap, extract recent BBC News articles and store them into a hosted 
 1. Install Anaconda/ Miniconda
 2. Run `conda env create -f environment.yml`
 
+## Run unit tests
+1. Run `python -m unittest discover -p "test_*.py"`
+
 ## Run scraper
 1. Configure [config.py](config.py)
 2. Activate the environment with `conda activate bbc_scraper`
