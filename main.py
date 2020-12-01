@@ -2,11 +2,13 @@ import datetime
 import logging
 import lxml
 import scrapy
-from scrapy.utils.log import configure_logging
+import readability
 from lxml.html.clean import Cleaner
+from scrapy.utils.log import configure_logging
 from scrapy.crawler import CrawlerProcess
 from config import SITEMAP_URL_NEWS, SCRAPER_LOG_FILE
 from database import create_client, destroy_client, insert_news
+from utils import format_article_readability
 
 configure_logging(install_root_handler=False)
 logging.basicConfig(
@@ -145,8 +147,17 @@ class BBCNewsSpider(scrapy.Spider):
             tree = lxml.html.fromstring(clean_html)
             keyword_ls.append(tree.text_content())
 
-        data["article"] = " ".join(article_ls)
+        article = " ".join(article_ls)
+
+        data["article"] = article
         data["keywords"] = keyword_ls
+
+        formatted_article = format_article_readability(article)
+        readability_results = readability.getmeasures(formatted_article, lang="en")
+        data["readability"] = readability_results["readability grades"][
+            "FleschReadingEase"
+        ]
+
         return data
 
     def closed(self, reason):

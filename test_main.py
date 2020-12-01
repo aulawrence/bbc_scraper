@@ -1,9 +1,9 @@
-import re
 import datetime
 import unittest
 import readability
 from scrapy.http import TextResponse
 from main import BBCSitemapSpider, BBCSitemapNewsSpider, BBCNewsSpider
+from utils import format_article_readability
 
 
 def response_from_file(filename, url=None, request=None):
@@ -11,19 +11,6 @@ def response_from_file(filename, url=None, request=None):
         url = "http://0.0.0.0/"
     with open(filename, "r") as f:
         return TextResponse(url=url, request=request, body=f.read().encode("utf-8"))
-
-
-def format_article_readability(article):
-    """Format article for readability.
-    Readability expects sentences separated by newline and words by space.
-
-    Args:
-        article (str): Article text.
-
-    Returns:
-        str: Article text formatted for readability.
-    """
-    return re.sub(f"([.?!]+)", "\\1\n", article)
 
 
 class TestBBCSitemapSpider(unittest.TestCase):
