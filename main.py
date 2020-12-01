@@ -31,9 +31,15 @@ class BBCSitemapSpider(scrapy.spiders.XMLFeedSpider):
         self.sitemap_news_spider = BBCSitemapNewsSpider()
 
     def parse_node(self, response, selector):
+        for item in self._parse_node(response, selector):
+            yield scrapy.Request(
+                url=item["url"], callback=self.sitemap_news_spider.parse
+            )
+
+    def _parse_node(self, response, selector):
         if len(selector.xpath("ns:loc")) == 1:
             loc = selector.xpath("ns:loc/text()").extract_first()
-            yield scrapy.Request(url=loc, callback=self.sitemap_news_spider.parse)
+            yield {"url": loc}
 
 
 class BBCSitemapNewsSpider(scrapy.spiders.XMLFeedSpider):
@@ -54,6 +60,14 @@ class BBCSitemapNewsSpider(scrapy.spiders.XMLFeedSpider):
         self.bbc_news_spider = BBCNewsSpider()
 
     def parse_node(self, response, node):
+        for item in self._parse_node(response, node):
+            yield scrapy.Request(
+                url=item["url"],
+                callback=self.bbc_news_spider.parse,
+                cb_kwargs={"data": item["data"]},
+            )
+
+    def _parse_node(self, response, node):
         if (
             len(node.xpath("ns:loc")) == 1
             and len(node.xpath("news:news/news:publication/news:language")) == 1
@@ -69,20 +83,16 @@ class BBCSitemapNewsSpider(scrapy.spiders.XMLFeedSpider):
             publication_date = node.xpath(
                 "news:news/news:publication_date/text()"
             ).extract_first()
-
-            yield scrapy.Request(
-                url=loc,
-                callback=self.bbc_news_spider.parse,
-                cb_kwargs={
-                    "data": {
-                        "url": loc,
-                        "title": title,
-                        "publication_date": datetime.datetime.strptime(
-                            publication_date, "%Y-%m-%dT%H:%M:%SZ"
-                        ),
-                    }
+            yield {
+                "url": loc,
+                "data": {
+                    "url": loc,
+                    "title": title,
+                    "publication_date": datetime.datetime.strptime(
+                        publication_date, "%Y-%m-%dT%H:%M:%SZ"
+                    ),
                 },
-            )
+            }
 
     def parse(self, response, **kwargs):
         return self._parse(response, **kwargs)
@@ -104,6 +114,11 @@ class BBCNewsSpider(scrapy.Spider):
             yield scrapy.Request(url=url, cb_kwargs={"data": data})
 
     def parse(self, response, **kwargs):
+        data = self._parse(response, **kwargs)
+        if data is not None:
+            insert_news(self.db_client, data)
+
+    def _parse(self, response, **kwargs):
         data = kwargs["data"]
         try:
             article = response.xpath("//article")[0]
@@ -132,7 +147,7 @@ class BBCNewsSpider(scrapy.Spider):
 
         data["article"] = " ".join(article_ls)
         data["keywords"] = keyword_ls
-        insert_news(self.db_client, data)
+        return data
 
     def closed(self, reason):
         destroy_client(self.db_client)

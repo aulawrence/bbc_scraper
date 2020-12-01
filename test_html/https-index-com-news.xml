@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
+    <sitemap>
+        <loc>https://www.bbc.com/sitemaps/https-sitemap-com-news-1.xml</loc>
+        <lastmod>2020-12-01T00:37:09Z</lastmod>
+    </sitemap>
+    <sitemap>
+        <loc>https://www.bbc.com/sitemaps/https-sitemap-com-news-2.xml</loc>
+        <lastmod>2020-12-01T00:40:29Z</lastmod>
+    </sitemap>
+    <sitemap>
+        <loc>https://www.bbc.com/sitemaps/https-sitemap-com-news-3.xml</loc>
+        <lastmod>2020-11-30T16:26:18Z</lastmod>
+    </sitemap>
+    <sitemap>
+        <loc>https://www.bbc.com/sitemaps/https-sitemap-com-news-5.xml</loc>
+        <lastmod>2020-11-30T23:23:55Z</lastmod>
+    </sitemap>
+</sitemapindex>
